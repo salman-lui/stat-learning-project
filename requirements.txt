@@ -3,3 +3,6 @@ torchvision
 pyyaml
 huggingface_hub
 timm
+matplotlib
+Pandas
+numpy
