@@ -63,7 +63,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training Deep Learning model")
     parser.add_argument("--save_path", type=str, default="/Users/salman/Documents/GitHub/stat-learning-project/results", help="Path to save the results")
-    parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of epochs for training")
     parser.add_argument("--model", type=str, default="ResNet", help="Choose model ResNet and ResNetPretrained, EfficientNetPretrained etc .... ")
     args = parser.parse_args()
     main(args)
