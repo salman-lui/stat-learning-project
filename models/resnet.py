@@ -1,4 +1,5 @@
 import torch
+import timm
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
@@ -63,56 +64,29 @@ class ResNet(nn.Module):
         print("Epoch [{}], val_loss: {:.4f}, val_acc: {:.4f}".format(epoch, result['val_loss'], result['val_acc']))
     
 
-
-class ResNetPretrained(ResNet):
+class ResNetTimm(nn.Module):
     def __init__(self, num_classes):
-        # Initialize the pretrained ResNet model (use any ResNet version you want, e.g., resnet18, resnet34, resnet50, etc.)
-        pretrained_model = models.resnet18(weights=models.resnet18.default_cfg['weights'])
+        super().__init__()
+        # Load the pre-trained model from timm
+        self.model = timm.create_model('resnet18', pretrained=True, num_classes=0)
+        # Add a new classifier for your dataset
+        self.classifier = nn.Linear(512, num_classes)
 
-        # Set the number of input channels
-        in_channels = 3
-
-        # Initialize the base ResNet model
-        super().__init__(in_channels, num_classes)
-
-        # Copy the pretrained layers to the base model
-        self.conv1 = pretrained_model.conv1
-        self.bn1 = pretrained_model.bn1
-        self.relu = pretrained_model.relu
-        self.maxpool = pretrained_model.maxpool
-        self.layer1 = pretrained_model.layer1
-        self.layer2 = pretrained_model.layer2
-        self.layer3 = pretrained_model.layer3
-        self.layer4 = pretrained_model.layer4
-
-        # Replace the classifier with a custom one for fine-tuning
-        num_ftrs = pretrained_model.fc.in_features
-        self.classifier = nn.Sequential(nn.Linear(num_ftrs, num_classes))
-
-    def forward(self, xb):
-        out = self.conv1(xb)
-        out = self.bn1(out)
-        out = self.relu(out)
-        out = self.maxpool(out)
-        out = self.layer1(out)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = self.layer4(out)
-        out = F.adaptive_avg_pool2d(out, (1, 1))
-        out = torch.flatten(out, 1)
-        out = self.classifier(out)
-        return out
+    def forward(self, x):
+        x = self.model(x)
+        x = self.classifier(x)
+        return x
 
     def training_step(self, batch):
         inputs, targets = batch
         outputs = self(inputs)  # Forward pass
-        loss = nn.CrossEntropyLoss()(outputs, targets)  # Compute loss
+        loss = F.cross_entropy(outputs, targets)  # Compute loss
         return loss
 
     def validation_step(self, batch):
         inputs, targets = batch
         outputs = self(inputs)
-        loss = nn.CrossEntropyLoss()(outputs, targets)
+        loss = F.cross_entropy(outputs, targets)
         _, preds = torch.max(outputs, 1)
         acc = torch.tensor(torch.sum(preds == targets).item() / len(preds))
         return {'val_loss': loss.detach(), 'val_acc': acc}
@@ -126,4 +100,3 @@ class ResNetPretrained(ResNet):
 
     def epoch_end(self, epoch, result):
         print("Epoch [{}], val_loss: {:.4f}, val_acc: {:.4f}".format(epoch, result['val_loss'], result['val_acc']))
-

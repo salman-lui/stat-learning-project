@@ -20,7 +20,7 @@ def load_preprocess_image(img_path, transforms):
     img = transforms(img)
     return img
 
-def generate_predictions(model, test_data_dir, classes, device):
+def generate_predictions(model, test_data_dir, classes, device, save_path):
     results = []
 
     for file in os.listdir(test_data_dir):
@@ -38,4 +38,4 @@ def generate_predictions(model, test_data_dir, classes, device):
 
     # Save results to a CSV file
     results_df = pd.DataFrame(results)
-    results_df.to_csv("predictions.csv", index=False)
+    results_df.to_csv(os.path.join(save_path, 'predictions.csv'), index=False)
